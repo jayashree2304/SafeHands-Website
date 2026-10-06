@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String           @id @default(uuid())
+  identifier  String           @unique // Email or Mobile Number
+  name        String?
+  email       String?
+  phone       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  enrolments  EventEnrolment[]
+  volunteers  Volunteer[]
+  donations   Donation[]
+}
+
+model OTP {
+  id         String   @id @default(uuid())
+  identifier String
+  otpHash    String
+  expiresAt  DateTime
+  attempts   Int      @default(0)
+  verified   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([identifier])
+}
+
+model Admin {
+  id                  String     @id @default(uuid())
+  username            String     @unique
+  passwordHash        String
+  role                String     @default("EDITOR")
+  totpSecret          String?
+  totpEnabled         Boolean    @default(false)
+  forcePasswordChange Boolean    @default(false)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  auditLogs           AuditLog[]
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  adminId    String
+  admin      Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action     String
+  targetType String
+  targetId   String?
+  details    String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+}
+
+model Event {
+  id          String           @id @default(uuid())
+  title       String
+  description String
+  date        DateTime
+  venue       String
+  category    String           @default("Community")
+  capacity    Int              @default(100)
+  status      String           @default("UPCOMING")
+  imageUrl    String?
+  isDeleted   Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  enrolments  EventEnrolment[]
+}
+
+model EventEnrolment {
+  id        String   @id @default(uuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name      String
+  email     String
+  phone     String
+  status    String   @default("CONFIRMED")
+  createdAt DateTime @default(now())
+}
+
+model Program {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  category    String
+  imageUrl    String?
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Volunteer {
+  id           String   @id @default(uuid())
+  name         String
+  email        String
+  phone        String
+  age          Int?
+  occupation   String?
+  address      String?
+  skills       String?
+  motivation   String?
+  availability String?
+  status       String   @default("PENDING")
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Donation {
+  id                  String   @id @default(uuid())
+  orderId             String   @unique
+  paymentId           String?
+  amount              Float
+  currency            String   @default("INR")
+  donorName           String
+  donorEmail          String
+  donorPhone          String
+  panNumber           String?
+  address             String?
+  taxReceiptRequested Boolean  @default(true)
+  status              String   @default("PENDING")
+  receiptNo           String?
+  userId              String?
+  user                User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Report {
+  id        String   @id @default(uuid())
+  title     String
+  year      String
+  category  String   @default("Annual")
+  pdfUrl    String
+  fileSize  String?
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
+
+model Certificate {
+  id          String   @id @default(uuid())
+  name        String
+  category    String   // 12A, 80G, CSR, FCRA
+  issuingBody String?
+  year        String?
+  imageUrl    String?
+  pdfUrl      String?
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  status    String   @default("UNREAD")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
